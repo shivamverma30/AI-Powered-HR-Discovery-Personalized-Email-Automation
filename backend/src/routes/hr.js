@@ -1,30 +1,42 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { searchHrContacts } from '../services/hrSearchService.js'
+import { searchJobsAndRecruiters } from '../services/hrSearchService.js'
 import { importContactsFromSheet } from '../services/sheetsImportService.js'
 
 const router = Router()
 
-// POST /api/hr/search - discover HR contacts for a company via web search.
+// Trim and length-cap a free-text search field.
+function cleanInput(value, maxLen = 100) {
+  const s = typeof value === 'string' ? value.trim() : ''
+  return s.slice(0, maxLen)
+}
+
+// POST /api/hr/search - discover relevant job postings + public recruiter
+// contacts. Company is the primary input; the rest are optional refinements.
 router.post('/search', requireAuth, async (req, res, next) => {
   try {
-    const company = typeof req.body?.company === 'string' ? req.body.company.trim() : ''
+    const company = cleanInput(req.body?.company)
+    const jobTitle = cleanInput(req.body?.jobTitle)
+    const category = cleanInput(req.body?.category)
+    const location = cleanInput(req.body?.location)
 
+    // At least a company name is required (primary input).
     if (!company) {
       return res
         .status(400)
         .json({ success: false, message: 'Company name is required.' })
     }
-    if (company.length > 100) {
+    if (company.length >= 100) {
       return res
         .status(400)
         .json({ success: false, message: 'Company name is too long.' })
     }
 
-    const result = await searchHrContacts(company)
+    const result = await searchJobsAndRecruiters({ company, jobTitle, category, location })
     return res.json({
       success: true,
       company,
+      jobs: result.jobs,
       contacts: result.contacts,
       pagesVisited: result.pagesVisited,
       message: result.message || null,

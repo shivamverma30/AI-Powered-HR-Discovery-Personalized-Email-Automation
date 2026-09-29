@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import ContactPreview from './ContactPreview.jsx'
+import JobResults from './JobResults.jsx'
 import DraftEditor from './DraftEditor.jsx'
 import { apiPost } from '../lib/api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
-// Shows the contact preview with a Generate Drafts action, then renders the
-// generated draft editors. Reused by the HR search and Sheets import pages.
-export default function GenerateDraftsSection({ contacts }) {
+// Wraps the job/recruiter results table with AI draft generation.
+// Selecting recruiter contacts (max 5) and clicking Generate Drafts calls the
+// existing /api/emails/generate endpoint (recipient locked server-side).
+export default function JobSearchResults({ jobs, contacts }) {
   const { user } = useAuth()
   const [generating, setGenerating] = useState(false)
   const [drafts, setDrafts] = useState([])
@@ -21,7 +22,7 @@ export default function GenerateDraftsSection({ contacts }) {
     setDrafts([])
 
     if (selected.length === 0) {
-      setError('Select at least one contact to generate drafts.')
+      setError('Select at least one recruiter contact to generate drafts.')
       return
     }
 
@@ -32,8 +33,6 @@ export default function GenerateDraftsSection({ contacts }) {
         name: c.name,
         title: c.title,
         company: c.company,
-        // Pass the related job title so the AI can personalize the email.
-        // The backend recipient stays locked to the contact email (Stage 4).
         jobTitle: c.jobTitle || null,
       })),
     })
@@ -49,16 +48,14 @@ export default function GenerateDraftsSection({ contacts }) {
       return
     }
 
-    if (status === 401) {
-      setError('Your session has expired. Please log in again.')
-    } else {
-      setError(data?.message || 'Draft generation failed. Please try again.')
-    }
+    if (status === 401) setError('Your session has expired. Please log in again.')
+    else setError(data?.message || 'Draft generation failed. Please try again.')
   }
 
   return (
     <>
-      <ContactPreview
+      <JobResults
+        jobs={jobs}
         contacts={contacts}
         onGenerate={handleGenerate}
         generating={generating}
@@ -93,11 +90,7 @@ export default function GenerateDraftsSection({ contacts }) {
         <div className="mt-6 space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Generated Drafts</h2>
           {drafts.map((draft) => (
-            <DraftEditor
-              key={draft.contactEmail}
-              draft={draft}
-              resumeUrl={user?.resumeUrl}
-            />
+            <DraftEditor key={draft.contactEmail} draft={draft} resumeUrl={user?.resumeUrl} />
           ))}
         </div>
       )}
