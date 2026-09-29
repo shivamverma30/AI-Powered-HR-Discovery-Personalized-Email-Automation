@@ -5,6 +5,9 @@ import { isValidEmail } from '../lib/contacts.js'
 import { extractResumeText } from '../services/resumeService.js'
 import { generateDraftForContact } from '../services/emailGenerationService.js'
 import { isGrokConfigured } from '../services/grokService.js'
+import { getConnection, getValidAccessToken } from '../services/gmailTokenService.js'
+import { sendEmail } from '../services/gmailSendService.js'
+import { getUsage } from '../services/dailyLimitService.js'
 
 const router = Router()
 
@@ -141,11 +144,17 @@ router.post('/regenerate', requireAuth, async (req, res, next) => {
   }
 })
 
-// GET /api/emails - list the authenticated user's saved drafts.
+// GET /api/emails - list the user's emails, optionally filtered by status.
+// ?status=draft|sent|failed  (omit for all)
 router.get('/', requireAuth, async (req, res, next) => {
   try {
+    const where = { userId: req.user.id }
+    const status = req.query.status
+    if (status === 'draft' || status === 'sent' || status === 'failed') {
+      where.status = status
+    }
     const drafts = await prisma.emailDraft.findMany({
-      where: { userId: req.user.id },
+      where,
       orderBy: { updatedAt: 'desc' },
     })
     return res.json({ success: true, drafts })
@@ -199,12 +208,129 @@ router.post('/', requireAuth, async (req, res, next) => {
   }
 })
 
+// Map Gmail/limit error codes to safe messages + status codes.
+function sendErrorResponse(res, err) {
+  const map = {
+    NOT_CONNECTED: [400, 'Connect your Gmail account before sending.'],
+    NO_REFRESH_TOKEN: [400, 'Gmail session expired. Please reconnect Gmail.'],
+    REFRESH_FAILED: [400, 'Gmail access was revoked. Please reconnect Gmail.'],
+    TOKEN_DECRYPT_FAILED: [400, 'Gmail token could not be read. Please reconnect Gmail.'],
+    GMAIL_PERMISSION: [502, 'Gmail rejected the request. Please reconnect Gmail.'],
+    GMAIL_QUOTA: [429, 'Gmail sending quota reached. Please try again later.'],
+    GMAIL_TIMEOUT: [504, 'The email send timed out. Please check My Emails before retrying.'],
+    GMAIL_UNAVAILABLE: [502, 'Gmail is currently unavailable. Please try again later.'],
+    GMAIL_SEND_FAILED: [502, 'The email could not be sent. Please try again.'],
+  }
+  const [status, message] = map[err.code] || [500, 'Could not send the email.']
+  return res.status(status).json({ success: false, message })
+}
+
+// Allow tests to inject a mock Gmail sender. Defaults to the real one.
+let gmailSender = sendEmail
+export function __setGmailSenderForTests(fn) {
+  gmailSender = fn || sendEmail
+}
+
+// POST /api/emails/:id/send - send a saved draft via the user's Gmail.
+router.post('/:id/send', requireAuth, async (req, res, next) => {
+  try {
+    // 1) Fetch draft scoped to the user.
+    const draft = await prisma.emailDraft.findUnique({ where: { id: req.params.id } })
+    if (!draft || draft.userId !== req.user.id) {
+      return res.status(404).json({ success: false, message: 'Draft not found.' })
+    }
+
+    // 2) Guard against already sent / in progress.
+    if (draft.status === 'sent') {
+      return res.status(409).json({ success: false, message: 'This email has already been sent.' })
+    }
+    if (draft.status === 'sending') {
+      return res.status(409).json({ success: false, message: 'This email is already being sent.' })
+    }
+
+    // 3) Validate content (recipient/subject/body come from the DB draft).
+    if (!isValidEmail(draft.contactEmail)) {
+      return res.status(400).json({ success: false, message: 'The saved recipient email is invalid.' })
+    }
+    if (!draft.subject?.trim() || !draft.body?.trim()) {
+      return res.status(400).json({ success: false, message: 'The draft is missing a subject or body.' })
+    }
+
+    // 4) Gmail must be connected.
+    const conn = await getConnection(req.user.id)
+    if (!conn || conn.status !== 'connected') {
+      return res.status(400).json({ success: false, message: 'Connect your Gmail account before sending.' })
+    }
+
+    // 5) Daily limit check.
+    const usage = await getUsage(req.user.id)
+    if (usage.remaining <= 0) {
+      return res.status(429).json({
+        success: false,
+        message: `Daily sending limit of ${usage.limit} reached. Resets at ${usage.resetsAt}.`,
+        usage,
+      })
+    }
+
+    // 6) Atomically claim the draft: only succeeds if it is still 'draft' or
+    // 'failed'. This blocks concurrent/double-click duplicate sends.
+    const claim = await prisma.emailDraft.updateMany({
+      where: { id: draft.id, userId: req.user.id, status: { in: ['draft', 'failed'] } },
+      data: { status: 'sending', errorMessage: null },
+    })
+    if (claim.count === 0) {
+      return res.status(409).json({ success: false, message: 'This email is already being sent or was sent.' })
+    }
+
+    // 7) Get a valid access token (refreshing if needed) and send.
+    try {
+      const accessToken = await getValidAccessToken(req.user.id)
+      const result = await gmailSender({
+        accessToken,
+        from: conn.gmailEmail,
+        to: draft.contactEmail,
+        subject: draft.subject,
+        body: draft.body,
+      })
+
+      const sent = await prisma.emailDraft.update({
+        where: { id: draft.id },
+        data: {
+          status: 'sent',
+          sentAt: new Date(),
+          gmailMessageId: result?.id || null,
+          errorMessage: null,
+        },
+      })
+
+      const freshUsage = await getUsage(req.user.id)
+      return res.json({ success: true, draft: sent, usage: freshUsage })
+    } catch (err) {
+      // Roll the claim back to 'failed' with a safe error note.
+      await prisma.emailDraft
+        .update({
+          where: { id: draft.id },
+          data: { status: 'failed', errorMessage: err.code || 'SEND_ERROR' },
+        })
+        .catch(() => {})
+      return sendErrorResponse(res, err)
+    }
+  } catch (err) {
+    return next(err)
+  }
+})
+
 // PUT /api/emails/:id - update a draft (subject/body only), owner-scoped.
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
     const existing = await prisma.emailDraft.findUnique({ where: { id: req.params.id } })
     if (!existing || existing.userId !== req.user.id) {
       return res.status(404).json({ success: false, message: 'Draft not found.' })
+    }
+
+    // Sent (or in-progress) emails are immutable.
+    if (existing.status === 'sent' || existing.status === 'sending') {
+      return res.status(409).json({ success: false, message: 'A sent email cannot be edited.' })
     }
 
     const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : ''

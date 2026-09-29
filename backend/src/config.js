@@ -22,6 +22,18 @@ export const config = {
     baseUrl: process.env.GROK_API_URL || 'https://api.x.ai/v1',
     model: process.env.GROK_MODEL || 'grok-3-mini',
   },
+  // Gmail OAuth for sending. Reuses the Google client credentials but with a
+  // separate callback URL and the gmail.send scope only.
+  gmail: {
+    callbackUrl:
+      process.env.GMAIL_CALLBACK_URL ||
+      'http://localhost:4000/api/gmail/callback',
+  },
+  backendUrl: process.env.BACKEND_URL || 'http://localhost:4000',
+  // Key used to encrypt stored OAuth tokens (AES-256-GCM). 32 bytes,
+  // provided as 64 hex chars or a base64 string. Never commit this.
+  tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY || '',
+  dailyEmailLimit: Number(process.env.DAILY_EMAIL_LIMIT || 30),
 }
 
 export const isProduction = config.nodeEnv === 'production'

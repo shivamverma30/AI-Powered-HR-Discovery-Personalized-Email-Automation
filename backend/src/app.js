@@ -8,6 +8,7 @@ import authRouter from './routes/auth.js'
 import profileRouter from './routes/profile.js'
 import hrRouter from './routes/hr.js'
 import emailsRouter from './routes/emails.js'
+import gmailRouter from './routes/gmail.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 // Build and configure the Express application.
@@ -51,6 +52,7 @@ export function createApp() {
   app.use('/api/profile', profileRouter)
   app.use('/api/hr', hrLimiter, hrRouter)
   app.use('/api/emails', hrLimiter, emailsRouter)
+  app.use('/api/gmail', hrLimiter, gmailRouter)
 
   // 404 handler for unknown routes
   app.use(notFound)

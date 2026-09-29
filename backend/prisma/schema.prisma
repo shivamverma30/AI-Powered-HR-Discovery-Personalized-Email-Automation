@@ -24,23 +24,46 @@ model User {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  emailDrafts EmailDraft[]
+  emailDrafts     EmailDraft[]
+  gmailConnection GmailConnection?
 }
 
-// A generated (not sent) personalized outreach email draft.
+// A personalized outreach email. Also holds the sending result once sent.
+// status: draft | sending | sent | failed
 model EmailDraft {
-  id           String   @id @default(cuid())
-  userId       String
-  contactEmail String
-  contactName  String?
-  company      String?
-  subject      String
-  body         String
-  status       String   @default("draft")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  contactEmail   String
+  contactName    String?
+  company        String?
+  subject        String
+  body           String
+  status         String    @default("draft")
+  sentAt         DateTime?
+  gmailMessageId String?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, status])
+}
+
+// A user's connected Gmail account used for sending. One per user.
+// Tokens are stored encrypted (AES-256-GCM); never returned to the client.
+// status: connected | disconnected | invalid
+model GmailConnection {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  gmailEmail            String
+  accessTokenEncrypted  String
+  refreshTokenEncrypted String?
+  tokenExpiry           DateTime?
+  status                String   @default("connected")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
