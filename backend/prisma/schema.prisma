@@ -1,0 +1,21 @@
+// Prisma schema for HireReach AI
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Minimal user model, ready for Google authentication in a later stage.
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  googleId  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
