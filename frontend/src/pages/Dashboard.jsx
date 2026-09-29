@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
-
-const navItems = [
-  { key: 'dashboard', label: 'Dashboard' },
-  { key: 'emails', label: 'My Emails' },
-  { key: 'profile', label: 'Profile' },
-]
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Dashboard() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -27,8 +29,17 @@ export default function Dashboard() {
             </button>
             <Logo to="/dashboard" />
           </div>
-          <div className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700">
-            0/30 emails sent today
+          <div className="flex items-center gap-3">
+            <div className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700">
+              0/30 emails sent today
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -41,19 +52,29 @@ export default function Dashboard() {
           } w-full md:block md:w-56 md:flex-none`}
         >
           <nav className="rounded-lg border border-slate-200 bg-card p-2">
-            {navItems.map((item) => (
-              <SidebarItem
-                key={item.key}
-                label={item.label}
-                active={item.key === 'dashboard'}
-              />
-            ))}
+            <span className="block rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900">
+              Dashboard
+            </span>
+            <span
+              className="block cursor-not-allowed rounded-md px-3 py-2 text-sm text-slate-400"
+              title="Available in a later stage"
+            >
+              My Emails
+            </span>
+            <Link
+              to="/profile"
+              className="block rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              Profile
+            </Link>
           </nav>
         </aside>
 
         {/* Main content */}
         <main className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Welcome{user?.name ? `, ${user.name}` : ''}
+          </h1>
           <p className="mt-1 text-sm text-slate-600">
             Choose how you want to collect HR contacts to start your outreach.
           </p>
@@ -71,21 +92,6 @@ export default function Dashboard() {
         </main>
       </div>
     </div>
-  )
-}
-
-function SidebarItem({ label, active }) {
-  return (
-    <button
-      type="button"
-      className={`block w-full rounded-md px-3 py-2 text-left text-sm ${
-        active
-          ? 'bg-slate-100 font-medium text-slate-900'
-          : 'text-slate-600 hover:bg-slate-50'
-      }`}
-    >
-      {label}
-    </button>
   )
 }
 

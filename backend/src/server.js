@@ -1,5 +1,8 @@
 import { createApp } from './app.js'
-import { config } from './config.js'
+import { config, assertConfig } from './config.js'
+
+// Warn early if required auth secrets are missing.
+assertConfig()
 
 const app = createApp()
 

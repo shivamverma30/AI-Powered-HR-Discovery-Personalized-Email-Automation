@@ -10,12 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Minimal user model, ready for Google authentication in a later stage.
+// User model with Google identity and profile fields.
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  googleId  String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String?
+  email            String   @unique
+  googleId         String?  @unique
+  collegeName      String?
+  githubUrl        String?
+  resumeUrl        String?
+  portfolioUrl     String?
+  profileCompleted Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

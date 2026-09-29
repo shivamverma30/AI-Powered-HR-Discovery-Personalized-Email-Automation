@@ -1,12 +1,12 @@
-// UI-only button for Google sign in.
-// Real Google OAuth will be wired up in Stage 2.
+import { goToGoogleLogin } from '../lib/api.js'
+
+// Starts the real Google OAuth flow by redirecting to the backend.
 export default function GoogleButton({ label = 'Continue with Google' }) {
   return (
     <button
       type="button"
-      disabled
-      title="Google sign in will be available soon"
-      className="flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+      onClick={goToGoogleLogin}
+      className="flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
     >
       <GoogleMark />
       {label}
