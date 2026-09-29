@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import DashboardLayout from '../components/DashboardLayout.jsx'
-import ContactPreview from '../components/ContactPreview.jsx'
+import GenerateDraftsSection from '../components/GenerateDraftsSection.jsx'
 import { apiPost } from '../lib/api.js'
 
 export default function HrSearch() {
@@ -88,7 +88,7 @@ export default function HrSearch() {
       )}
 
       {result && result.contacts.length > 0 && (
-        <ContactPreview contacts={result.contacts} />
+        <GenerateDraftsSection contacts={result.contacts} />
       )}
     </DashboardLayout>
   )

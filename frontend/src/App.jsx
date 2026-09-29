@@ -5,6 +5,7 @@ import Signup from './pages/Signup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import HrSearch from './pages/HrSearch.jsx'
 import SheetsImport from './pages/SheetsImport.jsx'
+import MyEmails from './pages/MyEmails.jsx'
 import Profile from './pages/Profile.jsx'
 import ProfileComplete from './pages/ProfileComplete.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -66,6 +67,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SheetsImport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/emails"
+        element={
+          <ProtectedRoute>
+            <MyEmails />
           </ProtectedRoute>
         }
       />

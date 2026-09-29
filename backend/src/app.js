@@ -7,6 +7,7 @@ import healthRouter from './routes/health.js'
 import authRouter from './routes/auth.js'
 import profileRouter from './routes/profile.js'
 import hrRouter from './routes/hr.js'
+import emailsRouter from './routes/emails.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 // Build and configure the Express application.
@@ -49,6 +50,7 @@ export function createApp() {
   app.use('/api/auth', authLimiter, authRouter)
   app.use('/api/profile', profileRouter)
   app.use('/api/hr', hrLimiter, hrRouter)
+  app.use('/api/emails', hrLimiter, emailsRouter)
 
   // 404 handler for unknown routes
   app.use(notFound)

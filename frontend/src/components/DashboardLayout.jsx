@@ -5,13 +5,16 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 const navItems = [
   { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Find HR', to: '/hr/search' },
+  { label: 'Google Sheets', to: '/hr/import' },
+  { label: 'My Emails', to: '/emails' },
   { label: 'Profile', to: '/profile' },
 ]
 
-// Shared dashboard chrome: top bar (email limit + logout) and sidebar.
+// Shared dashboard chrome: top bar (user, email limit, logout) and sidebar.
 export default function DashboardLayout({ children }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -23,7 +26,7 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-surface">
       <header className="border-b border-slate-200 bg-card">
-        <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -36,9 +39,15 @@ export default function DashboardLayout({ children }) {
             <Logo to="/dashboard" />
           </div>
           <div className="flex items-center gap-3">
-            <div className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700">
+            <span className="hidden text-sm text-slate-600 sm:inline">
               0/30 emails sent today
-            </div>
+            </span>
+            <Link
+              to="/profile"
+              className="hidden text-sm font-medium text-slate-700 hover:text-brand sm:inline"
+            >
+              {user?.name || 'Profile'}
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
@@ -63,6 +72,7 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={item.to}
                   to={item.to}
+                  onClick={() => setMobileNavOpen(false)}
                   className={`block rounded-md px-3 py-2 text-sm ${
                     active
                       ? 'bg-slate-100 font-medium text-slate-900'
@@ -73,12 +83,13 @@ export default function DashboardLayout({ children }) {
                 </Link>
               )
             })}
-            <span
-              className="block cursor-not-allowed rounded-md px-3 py-2 text-sm text-slate-400"
-              title="Available in a later stage"
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-1 block w-full rounded-md px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
             >
-              My Emails
-            </span>
+              Logout
+            </button>
           </nav>
         </aside>
 

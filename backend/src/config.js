@@ -16,6 +16,12 @@ export const config = {
   // Web search provider (Serper.dev). Optional: when absent, HR search
   // returns a clear "not configured" message instead of fabricating data.
   searchApiKey: process.env.SEARCH_API_KEY || '',
+  // Grok (xAI) API for email generation.
+  grok: {
+    apiKey: process.env.GROK_API_KEY || '',
+    baseUrl: process.env.GROK_API_URL || 'https://api.x.ai/v1',
+    model: process.env.GROK_MODEL || 'grok-3-mini',
+  },
 }
 
 export const isProduction = config.nodeEnv === 'production'

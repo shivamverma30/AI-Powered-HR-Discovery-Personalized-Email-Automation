@@ -2,10 +2,23 @@ import { useContactSelection, MAX_SELECTION } from '../hooks/useContactSelection
 
 // Shared preview table for both scraped and imported contacts.
 // Each contact: { name, email, title, company, sourceUrl, source, emailStatus }.
-export default function ContactPreview({ contacts }) {
+// Optional props:
+//   onGenerate(selectedContacts) - shows a "Generate Drafts" button
+//   generating - boolean loading state for that button
+export default function ContactPreview({ contacts, onGenerate, generating = false }) {
   const selection = useContactSelection()
 
   if (!contacts || contacts.length === 0) return null
+
+  // Build a stable key per row (matches the selection hook usage).
+  const keyFor = (contact, index) =>
+    contact.email ? `${contact.email}-${index}` : `row-${index}`
+
+  function handleGenerate() {
+    if (!onGenerate) return
+    const selected = contacts.filter((c, i) => selection.isSelected(keyFor(c, i)))
+    onGenerate(selected)
+  }
 
   return (
     <div className="mt-6">
@@ -26,6 +39,16 @@ export default function ContactPreview({ contacts }) {
           >
             Clear Selection
           </button>
+          {onGenerate && (
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={selection.count === 0 || generating}
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generating ? 'Generating...' : 'Generate Drafts'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -49,7 +72,7 @@ export default function ContactPreview({ contacts }) {
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {contacts.map((contact, index) => {
-              const key = contact.email ? `${contact.email}-${index}` : `row-${index}`
+              const key = keyFor(contact, index)
               return (
                 <tr key={key}>
                   <td className="px-3 py-2">
