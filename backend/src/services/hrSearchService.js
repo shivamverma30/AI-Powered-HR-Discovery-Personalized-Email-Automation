@@ -181,7 +181,7 @@ export async function searchJobsAndRecruiters(criteria) {
   jobs.sort((a, b) => b.relevanceScore - a.relevanceScore)
   const topJobs = jobs.slice(0, 25)
 
-  // 5) Build a flat contacts array compatible with the Grok generate flow.
+  // 5) Build a flat contacts array compatible with the Groq generate flow.
   // Each contact carries email + name + title + company + source, plus the
   // related job title (used to personalize the email).
   const contacts = [...recruiterByEmail.values()].map((rec) => ({

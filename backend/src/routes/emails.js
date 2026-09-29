@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/requireAuth.js'
 import { isValidEmail } from '../lib/contacts.js'
 import { extractResumeText } from '../services/resumeService.js'
 import { generateDraftForContact } from '../services/emailGenerationService.js'
-import { isGrokConfigured } from '../services/grokService.js'
+import { isGroqConfigured } from '../services/groqService.js'
 import { getConnection, getValidAccessToken } from '../services/gmailTokenService.js'
 import { sendEmail } from '../services/gmailSendService.js'
 import { getUsage } from '../services/dailyLimitService.js'
@@ -16,11 +16,11 @@ const MAX_CONTACTS = 5
 // Map internal error codes to a user-safe message.
 function messageForError(err) {
   const map = {
-    GROK_NOT_CONFIGURED: 'AI email generation is not configured on the server yet.',
-    GROK_ACCESS_DENIED:
-      'The AI service rejected the request. Check that the Grok API key is valid and the account has credits.',
-    GROK_RATE_LIMIT: 'The AI service is busy right now. Please try again shortly.',
-    GROK_TIMEOUT: 'The AI request timed out. Please try again.',
+    GROQ_NOT_CONFIGURED: 'AI email generation is not configured on the server yet.',
+    GROQ_ACCESS_DENIED:
+      'The AI service rejected the request. Check that the Groq API key is valid.',
+    GROQ_RATE_LIMIT: 'The AI service is busy right now. Please try again shortly.',
+    GROQ_TIMEOUT: 'The AI request timed out. Please try again.',
     AI_INVALID_JSON: 'The AI returned an unexpected response. Please try again.',
     AI_INCOMPLETE: 'The AI response was incomplete. Please try again.',
   }
@@ -67,7 +67,7 @@ async function loadUserContext(user) {
 // POST /api/emails/generate - generate drafts for up to 5 contacts.
 router.post('/generate', requireAuth, async (req, res, next) => {
   try {
-    if (!isGrokConfigured()) {
+    if (!isGroqConfigured()) {
       return res.status(503).json({
         success: false,
         message: 'AI email generation is not configured on the server yet.',
@@ -120,7 +120,7 @@ router.post('/generate', requireAuth, async (req, res, next) => {
 // POST /api/emails/regenerate - regenerate a single draft (recipient locked).
 router.post('/regenerate', requireAuth, async (req, res, next) => {
   try {
-    if (!isGrokConfigured()) {
+    if (!isGroqConfigured()) {
       return res
         .status(503)
         .json({ success: false, message: 'AI email generation is not configured on the server yet.' })

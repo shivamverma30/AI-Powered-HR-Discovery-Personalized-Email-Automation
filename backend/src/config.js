@@ -16,11 +16,11 @@ export const config = {
   // Web search provider (Serper.dev). Optional: when absent, HR search
   // returns a clear "not configured" message instead of fabricating data.
   searchApiKey: process.env.SEARCH_API_KEY || '',
-  // Grok (xAI) API for email generation.
-  grok: {
-    apiKey: process.env.GROK_API_KEY || '',
-    baseUrl: process.env.GROK_API_URL || 'https://api.x.ai/v1',
-    model: process.env.GROK_MODEL || 'grok-3-mini',
+  // Groq API (groq.com) for email generation. OpenAI-compatible.
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    baseUrl: process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1',
+    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
   },
   // Gmail OAuth for sending. Reuses the Google client credentials but with a
   // separate callback URL and the gmail.send scope only.

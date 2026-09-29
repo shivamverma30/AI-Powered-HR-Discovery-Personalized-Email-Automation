@@ -1,4 +1,4 @@
-import { grokJsonCompletion } from './grokService.js'
+import { groqJsonCompletion } from './groqService.js'
 import { isValidEmail } from '../lib/contacts.js'
 
 // System prompt: strict rules to avoid fabrication.
@@ -81,7 +81,7 @@ export async function generateDraftForContact({ profile, resumeText, contact }) 
   }
 
   const userPrompt = buildUserPrompt({ profile, resumeText, contact })
-  const raw = await grokJsonCompletion({ system: SYSTEM_PROMPT, user: userPrompt })
+  const raw = await groqJsonCompletion({ system: SYSTEM_PROMPT, user: userPrompt })
   const { subject, body } = parseDraftJson(raw)
 
   return {
