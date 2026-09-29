@@ -13,6 +13,9 @@ export const config = {
       process.env.GOOGLE_CALLBACK_URL ||
       'http://localhost:4000/api/auth/google/callback',
   },
+  // Web search provider (Serper.dev). Optional: when absent, HR search
+  // returns a clear "not configured" message instead of fabricating data.
+  searchApiKey: process.env.SEARCH_API_KEY || '',
 }
 
 export const isProduction = config.nodeEnv === 'production'

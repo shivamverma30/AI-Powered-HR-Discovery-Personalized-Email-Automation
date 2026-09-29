@@ -6,6 +6,7 @@ import { config } from './config.js'
 import healthRouter from './routes/health.js'
 import authRouter from './routes/auth.js'
 import profileRouter from './routes/profile.js'
+import hrRouter from './routes/hr.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 // Build and configure the Express application.
@@ -35,10 +36,19 @@ export function createApp() {
     legacyHeaders: false,
   })
 
+  // Limit search/scraping and import requests (they hit external services).
+  const hrLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+
   // API routes
   app.use('/api', healthRouter)
   app.use('/api/auth', authLimiter, authRouter)
   app.use('/api/profile', profileRouter)
+  app.use('/api/hr', hrLimiter, hrRouter)
 
   // 404 handler for unknown routes
   app.use(notFound)

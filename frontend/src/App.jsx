@@ -3,6 +3,8 @@ import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import HrSearch from './pages/HrSearch.jsx'
+import SheetsImport from './pages/SheetsImport.jsx'
 import Profile from './pages/Profile.jsx'
 import ProfileComplete from './pages/ProfileComplete.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -48,6 +50,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/search"
+        element={
+          <ProtectedRoute>
+            <HrSearch />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/import"
+        element={
+          <ProtectedRoute>
+            <SheetsImport />
           </ProtectedRoute>
         }
       />
